@@ -68,20 +68,21 @@ config/             策略阈值 + 白名单模板
 vector/             syslog 采集与粗筛（VRL）
 nginx/              EDL 端点
 tools/              replay 回放 / smoke 自检 / md2docx / 样本
-tests/              36 个用例
+tests/              38 个用例
 docs/               实施报告（md + docx）
 ```
 
 ## 测试
 
 ```bash
-python -m pytest -q            # 36 passed
+python -m pytest -q            # 38 passed
 python tools/smoke.py --local  # 10/10
 ```
 
 ## 上线顺序（重要）
 
 1. `whitelist.yaml` 先把 **L1 单位资产**补全，尤其是互联网出口 NAT 段；
+   真实网段建议写到 `config/whitelist.local.yaml`（启动时自动追加合并，已在 `.gitignore` 中排除）；
 2. 用真实报文替换 `tools/samples/ksc_events.log`，跑 `replay.py` 确认解析；
 3. `PA_MODE=xmlapi` + 填 `PA_HOSTS` / `PA_API_KEY`，仍保持 `dry_run=true`；
 4. 灰度 1~2 周，把 dry-run 日报给业务方与网络组看；
@@ -89,7 +90,7 @@ python tools/smoke.py --local  # 10/10
 
 ## 免责声明
 
-代码按"能跑、可读、可审计"的标准编写，并在模拟环境完成 36 项自动化测试与 10 项冒烟检查；
+代码按"能跑、可读、可审计"的标准编写，并在模拟环境完成 38 项自动化测试与 10 项冒烟检查；
 但**未在真实生产环境长期运行**。用于生产前请务必：先在 `dry_run` 下灰度、确认 KSC 事件格式与本项目的解析一致、
 并核对 PA 安全策略顺序。自动化封禁属于高风险动作，请自行完成授权与变更评审。
 

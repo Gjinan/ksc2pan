@@ -5,6 +5,9 @@
   2. L2 必须有 expire，过期自动失效；
   3. 加载时做合法性校验（网段过宽、必填字段缺失、条目暴涨），
      启动阶段校验失败 = 拒绝启动（fail-closed 于配置），运行期热加载失败 = 保留旧配置并告警。
+
+本地覆盖：同目录下的 `whitelist.local.yaml` 会自动合并进来（追加，不覆盖），
+用于"仓库里只放示例、现场真实网段放本地"的场景，该文件已在 .gitignore 中排除。
 """
 from __future__ import annotations
 
@@ -20,9 +23,27 @@ import yaml
 from .config import WhitelistCfg
 from .normalize import BUILTIN_RESERVED, IPAddress, builtin_reason, parse_ip
 
+LOCAL_OVERRIDE_NAME = "whitelist.local.yaml"
+
 
 class WhitelistError(ValueError):
     """白名单文件不合法。"""
+
+
+def _load_yaml(path: Path) -> dict[str, Any]:
+    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise WhitelistError(f"{path.name} 根节点必须是 mapping")
+    return data
+
+
+def _merge_layers(base: dict[str, Any], extra: dict[str, Any]) -> dict[str, Any]:
+    """把本地覆盖文件里的条目追加到基础文件之后（同一套校验规则）。"""
+    merged = dict(base)
+    for key in ("assets", "temporary", "windows"):
+        if extra.get(key):
+            merged[key] = list(base.get(key) or []) + list(extra[key])
+    return merged
 
 
 @dataclass
@@ -95,6 +116,11 @@ class Whitelist:
         self.last_error: str = ""
 
     # ------------------------------------------------------------ 加载/校验
+    @property
+    def local_path(self) -> Path:
+        """同目录下的本地覆盖文件（现场真实网段，不进 Git）。"""
+        return self._path.parent / LOCAL_OVERRIDE_NAME
+
     def load(self, strict: bool = True) -> None:
         """strict=True：任何校验失败都抛异常（启动阶段用）。"""
         with self._lock:
@@ -104,8 +130,12 @@ class Whitelist:
                 self.last_error = "whitelist file missing"
                 return
             mtime = self._path.stat().st_mtime
+            if self.local_path.exists():
+                mtime = max(mtime, self.local_path.stat().st_mtime)
             try:
-                data = yaml.safe_load(self._path.read_text(encoding="utf-8")) or {}
+                data = _load_yaml(self._path)
+                if self.local_path.exists():
+                    data = _merge_layers(data, _load_yaml(self.local_path))
                 snap = self._build(data, mtime)
             except Exception as exc:  # noqa: BLE001 - 统一转成白名单错误
                 self.last_error = str(exc)
@@ -281,6 +311,7 @@ class Whitelist:
         with self._lock:
             return {
                 "path": str(self._path),
+                "local_override": str(self.local_path) if self.local_path.exists() else "",
                 "version": self._snap.version,
                 "assets": len(self._snap.assets),
                 "temporary": len(self._snap.temporary),

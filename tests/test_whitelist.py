@@ -136,3 +136,32 @@ def test_check_api_shape(tmp_path):
     assert out["whitelisted"] is True
     assert out["hit"]["layer"] == "L1"
     assert wl.check("not-an-ip")["valid"] is False
+
+
+def test_local_override_is_merged(tmp_path):
+    """现场真实网段放 whitelist.local.yaml，不进 Git，但会参与判定。"""
+    wl = make(tmp_path)
+    assert wl.match(parse_ip("58.246.99.18")) is None
+
+    (tmp_path / "whitelist.local.yaml").write_text(
+        "assets:\n  - cidr: 58.246.99.0/24\n    why: 现场业务段\n    owner: 网络组\n",
+        encoding="utf-8",
+    )
+    wl.load(strict=False)
+
+    hit = wl.match(parse_ip("58.246.99.18"))
+    assert hit is not None and hit.why == "现场业务段"
+    assert wl.stats()["local_override"].endswith("whitelist.local.yaml")
+    # 基础文件的条目仍然有效
+    assert wl.match(parse_ip("222.128.16.5")) is not None
+
+
+def test_local_override_obeys_same_validation(tmp_path):
+    wl = make(tmp_path)
+    (tmp_path / "whitelist.local.yaml").write_text(
+        "assets:\n  - cidr: 0.0.0.0/0\n    why: 手滑\n", encoding="utf-8"
+    )
+    wl.load(strict=False)
+    assert "过宽" in wl.last_error
+    # 拒绝加载后旧快照仍生效，不会"半套配置"运行
+    assert wl.match(parse_ip("222.128.16.5")) is not None

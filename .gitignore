@@ -11,6 +11,10 @@ mock_pa_dag.jsonl
 .env
 certs/
 
+# 现场真实网段：只放本地，禁止提交
+config/whitelist.local.yaml
+whitelist.local.yaml
+
 # Python
 __pycache__/
 *.py[cod]
