@@ -1,0 +1,44 @@
+# KSC2PAN 运行配置
+# 所有阈值都有安全默认值：宁可少封，不可多封。
+service:
+  data_dir: /data
+  edl_dir: /data/edl
+  dry_run: true                # ★ 上线先保持 true，跑 1~2 周灰度再改 false
+  emergency_stop: false        # 一键熔断：true 时停止一切下发
+  log_level: INFO
+
+policy:
+  observe_first: true          # 首次出现只观察
+  dag_ttl_seconds: 14400       # L2 临时封禁 4 小时（PA 侧 timeout，到期自动解封）
+  edl_ttl_days: 30             # L3 长期封禁保留天数
+  dag_min_hits: 2              # 24h 内达到几次才进 L2
+  critical_immediate: true     # critical 事件绕过阈值，立即 L2
+  edl_min_hits_24h: 10         # 24h 累计次数达到即 L3 候选
+  edl_min_hosts_10m: 3         # 10 分钟内命中主机数达到即 L3 候选
+  require_approval_for_edl: true   # L3 需人工确认（false 则自动进 EDL）
+  block_inbound_only: true     # 只封入站源 IP
+  max_blocks: 5000             # 活跃封禁上限，超过只观察
+
+whitelist:
+  path: /etc/ksc2pan/whitelist.yaml
+  reload_interval: 60          # 秒；文件 mtime 变化即热加载
+  min_v4_prefix: 8             # 拒绝比 /8 更宽的 IPv4 段（防手误写 0.0.0.0/0）
+  min_v6_prefix: 16
+  max_growth_ratio: 3.0        # 条目数暴涨视为误操作，拒绝加载
+
+paloalto:
+  mode: mock                   # mock = 只记录不下发；xmlapi = 真实推送
+  hosts: []                    # HA 双机都要填："10.0.0.1","10.0.0.2"
+  api_key_env: PA_API_KEY
+  vsys: vsys1
+  dag_tag: KES-BLOCK
+  verify_tls: true             # 实验室自签证书时改 false
+  timeout: 10
+
+edl:
+  max_entries: 40000           # 防火墙单型号上限 50k，留 20% 余量
+  aggregate: true              # 聚合成 CIDR，减小文件体积
+
+notify:
+  webhook: ""                  # 预留：企微/钉钉机器人
+  min_level: L3

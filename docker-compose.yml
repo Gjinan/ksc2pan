@@ -1,0 +1,52 @@
+# KSC2PAN 一体化部署（采集 + 决策 + EDL 端点）
+# 只需一台 2C4G 的内网虚机；离线环境用 docker save/load 导入镜像。
+services:
+  ksc2pan:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: ksc2pan:1.0.0
+    container_name: ksc2pan
+    restart: unless-stopped
+    environment:
+      KSC2PAN_CONFIG: /etc/ksc2pan/config.yaml
+      KSC2PAN_DRY_RUN: ${KSC2PAN_DRY_RUN:-true}
+      KSC2PAN_TOKEN: ${KSC2PAN_TOKEN:-}
+      PA_MODE: ${PA_MODE:-mock}
+      PA_HOSTS: ${PA_HOSTS:-}
+      PA_API_KEY: ${PA_API_KEY:-}
+      TZ: Asia/Shanghai
+    volumes:
+      - ./config:/etc/ksc2pan:ro
+      - ./data:/data
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=3).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  vector:
+    # 生产请固定版本，例如 timberio/vector:0.43.1-alpine
+    image: timberio/vector:latest-alpine
+    container_name: ksc2pan-vector
+    restart: unless-stopped
+    depends_on:
+      - ksc2pan
+    volumes:
+      - ./vector/vector.toml:/etc/vector/vector.toml:ro
+      - ./data/vector:/var/lib/vector
+      - ./certs:/etc/vector/certs:ro
+    ports:
+      - "6514:6514/tcp"
+
+  edl:
+    image: nginx:1.27-alpine
+    container_name: ksc2pan-edl
+    restart: unless-stopped
+    volumes:
+      - ./data/edl:/usr/share/nginx/html:ro
+      - ./nginx/edl.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8081:80"

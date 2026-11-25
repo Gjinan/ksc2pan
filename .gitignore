@@ -1,0 +1,21 @@
+# 运行时数据
+data/
+data-replay/
+data-smoke/
+*.db
+*.db-wal
+*.db-shm
+mock_pa_dag.jsonl
+
+# 本地配置与密钥
+.env
+certs/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Office 临时文件
+~$*.docx

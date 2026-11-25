@@ -1,0 +1,6 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+pyyaml>=6.0
+requests>=2.31
+# 可选：用官方 SDK 替代原生 XML API 时再装
+# pan-os-python>=1.11
