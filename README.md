@@ -4,6 +4,8 @@
 **Palo Alto 防火墙的封禁动作**。不需要 SIEM，不需要商业组件，单机可跑。
 
 > 配套文章：《告警在终端，封禁在边界 —— 一次 EDR 与防火墙的联动复盘》
+>
+> MIT License · 欢迎 PR · 38 个测试通过
 
 ```
 KES 终端 ──► KSC ──Syslog/TLS──► Vector ──JSON──► KSC2PAN ──► DAG / EDL ──► PA Drop
@@ -96,4 +98,12 @@ python tools/smoke.py --local  # 10/10
 
 ## 许可
 
-未附带开源许可证文件。如需商用或二次分发，请先与作者联系。
+[MIT License](LICENSE) —— 可自由使用、修改、再分发，包括商用。
+
+换句话说：**拿走改成适合你们单位的版本就行，不用问**，只要求保留版权声明。
+改出了更好的实现（支持了更多 KES 版本、接了 FortiGate/Check Point），欢迎提 PR 回流。
+
+## 参与改进
+
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。最需要的是**真实环境的事件样本**（脱敏即可）——
+解析规则靠样本迭代，这比任何重构都有价值。

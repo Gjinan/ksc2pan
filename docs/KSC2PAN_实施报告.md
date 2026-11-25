@@ -7,7 +7,7 @@
 | 版本 | V1.0 |
 | 日期 | 2026-11-25 |
 | 适用环境 | 卡巴斯基 KES 11/12 + KSC 13.2/14.x/16.x；Palo Alto PAN-OS 10.x/11.x（含 HA 双机） |
-| 交付物 | 本报告 + 可运行代码包 ksc2pan（36 个自动化测试全部通过） |
+| 交付物 | 本报告 + 可运行代码包 ksc2pan（38 个自动化测试全部通过） |
 | 前置约束 | 无 SIEM；防火墙不能直接消费 KES/KSC 告警；软件可自部署；优先开源 |
 
 ---
@@ -42,7 +42,7 @@
 | 交付物 | 说明 |
 |---|---|
 | 服务代码 | Python 3.12 / FastAPI，约 2100 行（含注释）；决策/执行/编排核心约 700 行 |
-| 自动化测试 | 36 个用例（解析/白名单/决策/服务/API），全部通过 |
+| 自动化测试 | 38 个用例（解析/白名单/决策/服务/API），全部通过 |
 | 冒烟自检 | 10 项检查，对真实 uvicorn 实例执行，全部通过 |
 | 样本回放 | 12 条脱敏样本，覆盖观察/封禁/升级/白名单/内网/域名/脏数据 |
 | 部署编排 | docker compose（服务 + Vector + Nginx EDL），离线可导入 |
@@ -478,12 +478,12 @@ https://<fw>/api/?type=keygen&user=svc-ksc2pan&password=***
 
 ### 9.1 已完成的自动化验证
 
-**(1) 单元/集成测试：36 个用例全部通过**
+**(1) 单元/集成测试：38 个用例全部通过**
 
 ```
 $ python -m pytest -q
 ....................................                                     [100%]
-36 passed in 6.34s
+38 passed in 13.64s
 ```
 
 覆盖：解析（8 例）、白名单（12 例）、服务与决策（11 例）、HTTP 接口（4 例）。
@@ -700,6 +700,8 @@ curl -X POST "http://ksc2pan:8080/api/estop?on=true"     # 停止下发
 | 路径 | 说明 |
 |---|---|
 | ksc2pan/README.md | 快速开始与运维命令 |
+| ksc2pan/LICENSE | MIT 许可证 |
+| ksc2pan/CONTRIBUTING.md | 参与改进指南 |
 | ksc2pan/app/ksc2pan/*.py | 服务代码（7 个模块） |
 | ksc2pan/app/Dockerfile | 镜像构建 |
 | ksc2pan/config/config.yaml | 策略与连接配置 |
@@ -711,7 +713,7 @@ curl -X POST "http://ksc2pan:8080/api/estop?on=true"     # 停止下发
 | ksc2pan/tools/smoke.py | 部署自检 |
 | ksc2pan/tools/md2docx.py | 本报告的 Markdown→Word 生成脚本 |
 | ksc2pan/tools/samples/ksc_events.log | 样本 |
-| ksc2pan/tests/ | 36 个用例 |
+| ksc2pan/tests/ | 38 个用例 |
 
 ## 附录 D：参考链接
 
